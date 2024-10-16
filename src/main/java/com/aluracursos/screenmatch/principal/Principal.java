@@ -61,8 +61,13 @@ public class Principal {
 
         datosEpisodios.stream()
                 .filter(e -> !e.evaluacion().equalsIgnoreCase("N/A"))
+                .peek(e -> System.out.println("Primer filtro (NA)" + e))
                 .sorted(Comparator.comparing(DatosEpisodio::evaluacion).reversed())
+                .peek(e -> System.out.println("Segundo ordenacion (M>m)" + e))
+                .map(e -> e.titulo().toUpperCase())
+                .peek(e -> System.out.println("Tercer Filtro Mayoscula (m>M)" + e))
                 .limit(5)
+
                 .forEach(System.out::println);
 
         List<Episodio> episodios = temporadas.stream()
