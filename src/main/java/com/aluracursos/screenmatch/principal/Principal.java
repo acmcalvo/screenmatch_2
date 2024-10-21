@@ -1,9 +1,6 @@
 package com.aluracursos.screenmatch.principal;
 
-import com.aluracursos.screenmatch.model.DatosEpisodio;
-import com.aluracursos.screenmatch.model.DatosSerie;
-import com.aluracursos.screenmatch.model.DatosTemporadas;
-import com.aluracursos.screenmatch.model.Episodio;
+import com.aluracursos.screenmatch.model.*;
 import com.aluracursos.screenmatch.service.ConsumoAPI;
 import com.aluracursos.screenmatch.service.ConvierteDatos;
 
@@ -20,77 +17,80 @@ public class Principal {
     private final String APIKEY = "&apikey=4fc7c187";
     private ConsumoAPI consumoAPI = new ConsumoAPI();
     private ConvierteDatos conversor = new ConvierteDatos();
+    private List<DatosSerie> datosSeries = new ArrayList<>();
+
     public void muestraElMenu(){
-        System.out.println("Escribe el nombre de la série que deseas buscar");
+        var opcion = -1;
+        while (opcion != 0) {
+            var menu = """
+                    1 - Buscar series 
+                    2 - Buscar episodios
+                    3 - Mostrar series buscadas
+                                  
+                    0 - Salir
+                    """;
+            System.out.println(menu);
+            opcion = teclado.nextInt();
+            teclado.nextLine();
+
+            switch (opcion) {
+                case 1:
+                    buscarSerieWeb();
+                    break;
+                case 2:
+                    buscarEpisodioPorSerie();
+                    break;
+
+                case 3:
+                    mostrarSeriesBuscadas();
+
+                case 0:
+                    System.out.println("Cerrando la aplicación...");
+                    break;
+                default:
+                    System.out.println("Opción inválida");
+            }
+        }
+
+    }
+
+
+
+    private DatosSerie getDatosSerie() {
+        System.out.println("Escribe el nombre de la serie que deseas buscar");
         var nombreSerie = teclado.nextLine();
         var json = consumoAPI.obtenerDatos(URL + nombreSerie.replace(" ", "+") + APIKEY);
-        //https://www.omdbapi.com/?t=game+of+thrones&apikey=4fc7c187
+        System.out.println(json);
         DatosSerie datos = conversor.obtenerDatos(json, DatosSerie.class);
-        System.out.println(datos);
-
+        return datos;
+    }
+    private void buscarEpisodioPorSerie() {
+        DatosSerie datosSerie = getDatosSerie();
         List<DatosTemporadas> temporadas = new ArrayList<>();
 
-        for (int i = 1; i <= datos.totalDeTemporadas(); i++) {
-            json = consumoAPI.obtenerDatos(URL + nombreSerie.replace(" ", "+") + "&Season=" + i + APIKEY);
+        for (int i = 1; i <= datosSerie.totalDeTemporadas(); i++) {
+            var json = consumoAPI.obtenerDatos(URL + datosSerie.titulo().replace(" ", "+") + "&season=" + i + APIKEY);
             DatosTemporadas datosTemporada = conversor.obtenerDatos(json, DatosTemporadas.class);
             temporadas.add(datosTemporada);
         }
         temporadas.forEach(System.out::println);
-
-        for (int i = 0; i < datos.totalDeTemporadas(); i++) {
-            List<DatosEpisodio> episodiosTemporadas = temporadas.get(i).episodios();
-            for (int j = 0; j < episodiosTemporadas.size(); j++) {
-                System.out.println(episodiosTemporadas.get(j).titulo());
-            }
-        }
-        temporadas.forEach(t -> t.episodios().forEach(e -> System.out.println(e.titulo())));
-
-        List<String> nombres = Arrays.asList("Genesys","Eric","Maria","Brenda");
-
-        nombres.stream()
-                .sorted()
-                .limit(2)
-                .filter(n -> n.startsWith("E"))
-                .map(n -> n.toUpperCase())
-                .forEach(System.out::println);
-
-        List<DatosEpisodio> datosEpisodios = temporadas.stream()
-                .flatMap(t -> t.episodios().stream())
-                .collect(Collectors.toList());
-        System.out.println("\n Top 5 episodios");
-
-        datosEpisodios.stream()
-                .filter(e -> !e.evaluacion().equalsIgnoreCase("N/A"))
-                .peek(e -> System.out.println("Primer filtro (NA)" + e))
-                .sorted(Comparator.comparing(DatosEpisodio::evaluacion).reversed())
-                .peek(e -> System.out.println("Segundo ordenacion (M>m)" + e))
-                .map(e -> e.titulo().toUpperCase())
-                .peek(e -> System.out.println("Tercer Filtro Mayoscula (m>M)" + e))
-                .limit(5)
-
-                .forEach(System.out::println);
-
-        List<Episodio> episodios = temporadas.stream()
-                .flatMap(t -> t.episodios().stream()
-                        .map(d -> new Episodio(t.numero(), d)))
-                .collect(Collectors.toList());
-
-        episodios.forEach(System.out::println);
-
-        System.out.println("a partir de que año deseas ver los episodios?");
-        var fecha = teclado.nextInt();
-        teclado.nextLine();
-
-        LocalDate fechaBusqueda = LocalDate.of(fecha, 1, 1);
-
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
-        episodios.stream()
-                .filter(e -> e.getFechaDeLanzamiento() != null && e.getFechaDeLanzamiento().isAfter(fechaBusqueda))
-                .forEach(e -> System.out.println(
-                        "Temporada: " + e.getTemporada() +
-                                " Episodio: " + e.getTitulo() +
-                                " Fecha de Lanzamiento: " + e.getFechaDeLanzamiento().format(formatter)
-                ));
+    }
+    private void buscarSerieWeb() {
+        DatosSerie datos = getDatosSerie();
+        datosSeries.add (datos);
+        System.out.println(datos);
 
     }
+    private void mostrarSeriesBuscadas() {
+       List<Serie> series = new ArrayList<>();
+       series = datosSeries.stream()
+               .map(d -> new Serie(d))
+               .collect(Collectors.toList());
+
+       series.stream()
+               .sorted(Comparator.comparing(Serie::getGenero))
+        .forEach(System.out::println);
+
+    }
+
 }
