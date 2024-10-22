@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonAlias;
 import jakarta.persistence.*;
 import org.springframework.boot.autoconfigure.domain.EntityScan;
 
+import java.util.List;
 import java.util.OptionalDouble;
 
 @Entity
@@ -34,6 +35,11 @@ public class Serie {
     private String actores;
 
     private String sinopsis;
+
+    @Transient
+    private List<Episodio> episodios;
+
+    public Serie(){}
 
     public Serie(DatosSerie datosSerie) {
         this.titulo = datosSerie.titulo();
