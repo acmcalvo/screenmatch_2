@@ -36,7 +36,7 @@ public class Serie {
 
     private String sinopsis;
 
-    @Transient
+ @OneToMany(mappedBy = "serie")
     private List<Episodio> episodios;
 
     public Serie(){}
